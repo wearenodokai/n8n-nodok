@@ -1,0 +1,348 @@
+{
+  "createdAt": "2025-09-25T16:49:59.537Z",
+  "updatedAt": "2025-09-25T16:50:25.997Z",
+  "id": "h5WUrgKRAILcqCdD",
+  "name": "Telegram Bot",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=#**Rol**\n\nEres Bibliotecario, un agente de IA de Nodok.ai que organiza y clasifica conocimiento.\nTu función es recibir links compartidos en un grupo de Telegram y transformarlos en entradas bien estructuradas en Obsidian (repositorio manejado con Git).\n\n#Input:\n\nVas a recibir un Link del usuadio\n\n# ** Your Core Responsibilities**\n\nTu tarea es simple, recibir un link y seguir los siguientes pasos.\n- Pedir al usuario una categoria (obligatorio)\n- Si el usuario ya proporcionó la carpeta en el último mensaje o existe en memoria, NO volver a pedir confirmación. Proceder directo a crear.\n- No está permitido afirmar que “buscaste” o “creaste” sin usar Tools.\n- Cualquier acción (buscar/crear) DEBE ejecutarse mediante la Tool correspondiente y citar su resultado.\n- Si no puedes usar la Tool, responde Error (no inventes resultados).\n- Extraer del link Titulo y descripcion\n- Verificar si la entrada existe\n- Si existe, Notificar al usuario\n- Si no existe, crear la entrada\n\n#Tienes acceso a las siguientes Tools:\n\n\"Leer link y Extraer Metadata\": recibe un link y devuelve una lista con los metadatos encontrados\n\"Buscar Entrada\": busca si el archivo md existe en github\n\"Crear Entrada\": Crea el archivo md en github\n\n# ** Estilo de conversacion**\n\n**Cercado y Animoso** – Haz chistes referidos al titulo del link cuando lo creas, responde corto y claro.\nPolítica de confirmación: UNA sola confirmación máxima. Si “Folder” está presente, crear sin repreguntar.\n\n# Output:\n\n- Responses should be well-structured, typically between 2-5 sentences. Evita repreguntar una vez que “Folder” está definido.\n\n- Provide precise and relevant answers tailored to the user's specific queries.\n\n# Output formats. \n\n- Exito: 'Gracias por contribuir a la biblioteca de Nodok.ai + Chiste usando el titulo'\n- Error: 'Que garron, no se pudio. Fran, anda a ver que pasa'\n\n# Md file path format. \n\n- Intenta generar un nombre de carpeta buscando la tecnología en el título, corto y claro. \n- PIDE confirmación UNA sola vez sólo si el usuario aún NO definió carpeta. \n- Si el usuario define carpeta, úsala y procede sin repreguntar.\n- Nunca inicies el path con /\n- La estructura sera siempre <nombreCarpeta>/<archivoMd>.md\n\n# Md file name format. \n\n- Siempre formatea el nombre limpiando caracteres especiales, usando siempre guiones bajos y minuscula\n\n# Md file format. \n\n# Titulo - [Ver Mas](LINK)\n\n# POLÍTICA DE USO DE TOOLS (OBLIGATORIA)\n- Paso 1: Llama “Leer link y Extraer Metadata(URL)” → guarda {title, description}.\n- Paso 2: Construye Folder/Slug/File_Path (sin / inicial). NO escribas “creado”.\n- Paso 3: Llama “Buscar Entrada(File_Path)”.\n  - Si found=true → responde “entrada duplicada” (no crear).\n  - Si found=false → Paso 4.\n- Paso 4: Llama “Crear Entrada(URL, Folder, Slug, File_Path, File_Content, Commit_Message)”.\n- Está prohibido afirmar resultados de pasos 3 o 4 si no hubo Tool con respuesta."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        80
+      ],
+      "id": "b4405e24-45dd-418a-8ee1-05f2f3d6330f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id.toString() }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        288
+      ],
+      "id": "23d198cf-57f2-4114-b3ed-d59f3e9cb198",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('GitVars').item.json.repo_owner }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('GitVars').item.json.repo_name }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $fromAI('File_Path', ``, 'string') }}",
+        "fileContent": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_Content', ``, 'string') }}",
+        "commitMessage": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Commit_Message', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        288
+      ],
+      "id": "14aac13e-72a0-4d33-b280-f04e72b54468",
+      "name": "Crear entrada",
+      "webhookId": "61accf88-9254-4e9e-8f5d-42a3b3a102a2",
+      "credentials": {
+        "githubApi": {
+          "id": "9cmgY9oiCDpxVZqR",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('GitVars').item.json.repo_owner }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('GitVars').item.json.repo_name }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $('GitVars').item.json.repo_path }}/{{ $fromAI('File_Path', ``, 'string') }}",
+        "asBinaryProperty": false,
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        1504,
+        288
+      ],
+      "id": "64c5bcee-93eb-4f77-9cc8-eb8d473eec03",
+      "name": "Buscar Entrada",
+      "webhookId": "99c001b1-8a44-45b0-aa23-e0ecd0f2defb",
+      "credentials": {
+        "githubApi": {
+          "id": "9cmgY9oiCDpxVZqR",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03f51f9c-4681-4423-91d2-d32f4c18d6bc",
+              "name": "repo_owner",
+              "type": "string",
+              "value": "wearenodokai"
+            },
+            {
+              "id": "0c9b521a-b698-4b43-9eb0-bbf744760158",
+              "name": "repo_name",
+              "type": "string",
+              "value": "obsidian"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "bc9021b1-bdb4-42ed-9ef1-1042b0c00bff",
+      "name": "GitVars",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        912,
+        80
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        288
+      ],
+      "id": "66e73b3e-f782-45c1-b6ee-10d05ad2f420",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "oEmQsCZTwFs0ZGjp",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\",\n  \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\",\n  \"Accept-Language\": \"en-US,en;q=0.9,es;q=0.8\",\n  \"Accept-Encoding\": \"gzip, deflate, br\",\n  \"Cache-Control\": \"no-cache\",\n  \"Pragma\": \"no-cache\",\n  \"Sec-Fetch-Dest\": \"document\",\n  \"Sec-Fetch-Mode\": \"navigate\",\n  \"Sec-Fetch-Site\": \"none\",\n  \"Upgrade-Insecure-Requests\": \"1\"\n}\n",
+        "options": {},
+        "optimizeResponse": true,
+        "responseType": "html",
+        "cssSelector": "h1"
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1360,
+        288
+      ],
+      "id": "c42ee659-1027-4147-bb87-1fdb376c62b0",
+      "name": "Leer link y Extraer Metadata"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        80
+      ],
+      "id": "37e609a0-f0ba-49e4-ac04-818e85dce5cd",
+      "name": "Telegram Trigger",
+      "webhookId": "83bd8f8c-b871-482a-88e9-440a309c54a9",
+      "credentials": {
+        "telegramApi": {
+          "id": "B5SMwMyNpq4oMklv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        80
+      ],
+      "id": "acac432b-900d-4854-8ea0-41832d329fe7",
+      "name": "Send a text message",
+      "webhookId": "976aae73-c04c-4a89-82e0-87e642a4a5e7",
+      "credentials": {
+        "telegramApi": {
+          "id": "B5SMwMyNpq4oMklv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Bot\nLee menciones a un bot desde un channel. \nRecibe un link y crea una entrada en un repositorio \n\n## Requerimientos\n\n**Telegram** Desde Telegram usar BotFhater para crear el nuevo bot y obtener el Http API\n\n**Modelo** Setear una apy key de gemini [Gemini Studio](https://aistudio.google.com/app/apikey)\n\n**GitHub** Setear un token para este proceso [GitHub Tokens](https://github.com/settings/tokens)\n\n**GitVars** Definir el repo_owner y repo_name para poder pushear los cambios ",
+        "height": 256,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        0
+      ],
+      "id": "5ec88df6-d24b-4c17-ae0f-2bfb48f98101",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear entrada": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Entrada": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitVars": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer link y Extraer Metadata": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "GitVars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "11e244ab-476c-4833-a626-37df04f5649f",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-09-25T16:49:59.537Z",
+      "updatedAt": "2025-09-25T16:49:59.537Z",
+      "role": "workflow:owner",
+      "workflowId": "h5WUrgKRAILcqCdD",
+      "projectId": "zky87BVZJHpIbDQj"
+    }
+  ],
+  "tags": []
+}
